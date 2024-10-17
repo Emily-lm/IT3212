@@ -1,2 +1,6 @@
 /vehicle-dataset
 /animals
+/motorcycle-binary
+/motorcycle-contour
+/motorcycle-contour-100
+.DS_Store
