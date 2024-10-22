@@ -13,6 +13,25 @@ def cell_hog(mag, ang, cell_size, nbins):
     :return: HOG feature for cell
     """
 
+    # Compute histogram of gradients for cell
+    hog_cell = np.zeros(nbins)
+    cell_h = mag.shape[0]
+    cell_w = mag.shape[1]
+
+    for i in range(cell_h):
+        for j in range(cell_w):
+            angle = ang[i, j]
+            magnitude = mag[i, j]
+
+            # Compute bin index
+            bin_index = int(angle / (2 * np.pi / nbins))
+
+            # Update histogram
+            hog_cell[bin_index] += magnitude
+    
+    return hog_cell
+
+
 def hog(img, cell_size=8, block_size=2, nbins=9):
     """
     Compute Histogram of Gradients (HOG) for an image
@@ -37,5 +56,6 @@ def hog(img, cell_size=8, block_size=2, nbins=9):
     ang = np.arctan2(gy, gx)
 
     # Compute Histogram of Gradients for cell
+    hog_cell = cell_hog(mag, ang, cell_size, nbins)
 
 
