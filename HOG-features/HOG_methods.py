@@ -3,6 +3,7 @@ import cv2 as cv
 import matplotlib.pyplot as plt
 import skimage as ski
 
+
 def cell_hog(mag, ang, cell_size, nbins):
     """
     Compute Histogram of Gradients for a cell
@@ -28,11 +29,11 @@ def cell_hog(mag, ang, cell_size, nbins):
 
             # Update histogram
             hog_cell[bin_index] += magnitude
-    
+
     return hog_cell
 
 
-def hog(img, cell_size=8, block_size=2, nbins=9):
+def hog(img, cell_size=(8, 8), block_size=(4, 4), nbins=9):
     """
     Compute Histogram of Gradients (HOG) for an image
     :param img: input image
@@ -54,8 +55,39 @@ def hog(img, cell_size=8, block_size=2, nbins=9):
     # Compute magnitude and angle of gradient
     mag = np.sqrt(gx**2 + gy**2)
     ang = np.arctan2(gy, gx)
+    mag_normalized = np.uint8(255 * (mag / np.max(mag)))
 
     # Compute Histogram of Gradients for cell
-    hog_cell = cell_hog(mag, ang, cell_size, nbins)
+    cell_h = cell_size[0]
+    cell_w = cell_size[1]
+    block_h = block_size[0]
+    block_w = block_size[1]
+    img_h = img.shape[0]
+    img_w = img.shape[1]
 
+    # Compute number of cells in x and y directions
+    n_cells_x = img_w // cell_w
+    n_cells_y = img_h // cell_h
 
+    # Compute number of blocks in x and y directions
+    n_blocks_x = n_cells_x - block_w + 1
+    n_blocks_y = n_cells_y - block_h + 1
+
+    # Compute HOG feature image
+    hog_img = np.zeros((n_blocks_y, n_blocks_x, block_h, block_w, nbins))
+
+    for i in range(n_blocks_y):
+        for j in range(n_blocks_x):
+            for k in range(block_h):
+                for l in range(block_w):
+                    cell_mag = mag[
+                        i * cell_h : (i + 1) * cell_h, j * cell_w : (j + 1) * cell_w
+                    ]
+                    cell_ang = ang[
+                        i * cell_h : (i + 1) * cell_h, j * cell_w : (j + 1) * cell_w
+                    ]
+                    hog_img[i, j, k, l, :] = cell_hog(
+                        cell_mag, cell_ang, cell_size, nbins
+                    )
+
+    return img, mag_normalized, hog_img
