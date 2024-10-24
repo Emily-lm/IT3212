@@ -9,15 +9,13 @@ def cell_hog(mag, ang, nbins):
     Compute Histogram of Gradients for a cell
     :param mag: magnitude of gradient (2D array)
     :param ang: angle of gradient (2D array)
-    :param cell_size: size of cell in pixels
     :param nbins: number of bins in histogram
     :return: HOG feature for cell
     """
 
-    # Compute histogram of gradients for the cell
+    # Initialize the histogram with the number of bins
     hog_cell = np.zeros(nbins)
-    cell_h = mag.shape[0]
-    cell_w = mag.shape[1]
+    cell_h, cell_w = mag.shape
 
     for i in range(cell_h):
         for j in range(cell_w):
@@ -43,11 +41,12 @@ def hog(img, cell_size=(8, 8), block_size=(4, 4), nbins=9):
     :param nbins: number of bins in histogram
     :return: original image, gradient image, HOG feature image
     """
-
-    # Compute gradient image
-
     # Convert image to float32
     img = np.float32(img) / 255.0
+
+    # Convert image to grayscale if it has multiple channels (e.g., color image)
+    if len(img.shape) == 3:
+        img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
     # Compute gradient in x and y directions
     gx = cv.Sobel(img, cv.CV_32F, 1, 0, ksize=1)
@@ -93,8 +92,60 @@ def hog(img, cell_size=(8, 8), block_size=(4, 4), nbins=9):
                     ]
 
                     # Compute the HOG for the current cell
-                    hog_img[i, j, k, l, :] = cell_hog(
-                        cell_mag, cell_ang, cell_size, nbins
-                    )
+                    hog_img[i, j, k, l, :] = cell_hog(cell_mag, cell_ang, nbins)
 
     return img, mag_normalized, hog_img
+
+
+def visualize_hog(img, hog_features, cell_size=(8, 8), nbins=9):
+    """
+    Visualize HOG features on top of the input image.
+    :param img: original image
+    :param hog_features: HOG features as computed (3D or 4D array)
+    :param cell_size: size of each cell in pixels
+    :param nbins: number of orientation bins in HOG
+    :return: None, shows the HOG visualization
+    """
+
+    # Create a plot with the original image
+    plt.imshow(img, cmap="gray")
+
+    # If hog_features is 5D, sum over the 2x2 block dimensions to collapse to 3D
+    if len(hog_features.shape) == 5:
+        hog_features = hog_features.sum(
+            axis=(2, 3)
+        )  # Sum over the block_h and block_w dimensions
+
+    # After summing, hog_features should now be 3D
+    n_cells_y, n_cells_x, _ = hog_features.shape
+
+    # Define the angles for the bins
+    bin_angles = np.linspace(0, np.pi, nbins, endpoint=False)
+
+    # Loop through each cell
+    for i in range(n_cells_y):
+        for j in range(n_cells_x):
+            # Get the HOG features for the current cell
+            cell_hog = hog_features[
+                i, j, :
+            ]  # Assuming this is the 1D array of histogram values
+
+            # Find the dominant orientation
+            max_bin = np.argmax(cell_hog)
+            angle = bin_angles[max_bin]
+
+            # Calculate the position for the arrow (center of the cell)
+            y = i * cell_size[0] + cell_size[0] // 2
+            x = j * cell_size[1] + cell_size[1] // 2
+
+            # Draw an arrow representing the dominant gradient orientation
+            dx = np.cos(angle) * cell_hog[max_bin]  # Scale by magnitude
+            dy = np.sin(angle) * cell_hog[max_bin]  # Scale by magnitude
+
+            # Draw the arrow on the plot
+            plt.arrow(x, y, dx, dy, color="red", head_width=1, head_length=1)
+
+    plt.title("HOG Visualization")
+    plt.show()
+
+
