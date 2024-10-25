@@ -39,3 +39,15 @@ def lbp(img, R=1):
             lbp_img[i, j] = lbp_code
 
     return lbp_img
+
+
+def lbp_hist(lbp_img):
+    """
+    Compute the LBP histogram for an LBP image
+    :param lbp_img: LBP image
+    :return: LBP histogram
+    """
+    # Compute the LBP histogram
+    hist, _ = np.histogram(lbp_img, bins=256, range=(0, 256))
+
+    return hist
