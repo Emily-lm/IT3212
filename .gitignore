@@ -4,6 +4,7 @@ motorcycle-contour/
 motorcycle-contour-100/
 social-media/
 vehicle-dataset/
+smoking.csv
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
